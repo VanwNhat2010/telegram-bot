@@ -2,9 +2,9 @@
   "name": "telegram-bot",
   "version": "1.0.0",
   "description": "Telegram bot for Sunwin",
-  "main": "bot.js",
+  "main": "bot1.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot1.js"
   },
   "dependencies": {
     "axios": "^1.6.8",
