@@ -113,7 +113,7 @@ bot.onText(/\/key (.+)/, async (msg, match) => {
         bot.sendMessage(chatId, "❌ Key không hợp lệ.");
         return;
     }
-    
+
     if (keys[userKey] === userId) {
         bot.sendMessage(chatId, "✅ Key này đã được bạn sử dụng.");
         return;
@@ -135,7 +135,7 @@ bot.onText(/\/taokey (.+)/, async (msg, match) => {
         bot.sendMessage(chatId, "Bạn không có quyền sử dụng lệnh này.");
         return;
     }
-    
+
     const key = match[1];
     keys[key] = null;
     bot.sendMessage(chatId, `✅ Key '${key}' đã được tạo thành công.`);
@@ -157,31 +157,56 @@ async function fetchAndSendUpdate(chatId, userId) {
             activeBots[userId].lastPhien = currentPhien;
         }
 
-        const { phien, xuc_xac, tong, ket_qua, phien_sau, du_doan, do_tin_cay } = data;
-        
+        // Lấy dữ liệu từ API một cách an toàn
+        const {
+            phien = "N/A",
+            xuc_xac = "N/A",
+            tong = "N/A",
+            ket_qua = "N/A",
+            phien_sau = "N/A",
+            du_doan = "N/A",
+            do_tin_cay = "N/A",
+            pattern_nhan_dien = "N/A",
+        } = data;
+
         const messageText = (
             "♦️ SUNWIN VIP - PHÂN TÍCH CHUẨN XÁC ♦️\n" +
             "══════════════════════════\n" +
             `🆔 Phiên: ${phien}\n` +
-            `🎲 Xúc xắc: ${xuc_xac}\n` +
+            `🎲 Xúc xắc: ${Array.isArray(xuc_xac) ? xuc_xac.join(', ') : xuc_xac}\n` +
             `🧮 Tổng điểm: ${tong} | Kết quả: ${ket_qua} ❌\n` +
             "──────────────────────────\n" +
             `🔮 Dự đoán phiên ${phien_sau}: ${du_doan}\n` +
             `📊 Độ tin cậy: ⚠️ THẤP (${do_tin_cay}%)\n` +
             `🎯 Khuyến nghị: Đặt cược ${du_doan}\n` +
             "\n" +
-            "🧩 Pattern: N/A\n" +
+            `🧩 Pattern: ${pattern_nhan_dien}\n` +
             `⏱️ Thời gian: ${new Date().toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}\n` +
             "══════════════════════════\n" +
             "👥 Hệ thống phân tích Sunwin AI 👥\n" +
             "💎 Uy tín - Chính xác - Hiệu quả 💎"
         );
-        
+
         bot.sendMessage(chatId, messageText);
-        
+
     } catch (error) {
         console.error("Lỗi khi gọi API:", error);
-        bot.sendMessage(chatId, `❌ Lỗi khi gọi API: ${error.message}`);
+        let errorMessage = "Lỗi không xác định.";
+        if (axios.isAxiosError(error)) {
+            if (error.response) {
+                // Lỗi từ phía server (ví dụ: 502)
+                errorMessage = `Lỗi khi gọi API: Request failed with status code ${error.response.status}`;
+            } else if (error.request) {
+                // Lỗi không nhận được phản hồi (mạng, timeout)
+                errorMessage = `Lỗi khi gọi API: Không nhận được phản hồi từ server. Vui lòng thử lại sau.`;
+            } else {
+                // Lỗi khác khi thiết lập request
+                errorMessage = `Lỗi khi gọi API: ${error.message}`;
+            }
+        } else {
+            errorMessage = `Lỗi khi gọi API: ${error.message}`;
+        }
+        bot.sendMessage(chatId, `❌ ${errorMessage}`);
     }
 }
 
@@ -189,12 +214,12 @@ async function fetchAndSendUpdate(chatId, userId) {
 bot.onText(/\/batbot/, (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
-    
+
     if (!Object.values(keys).includes(userId)) {
         bot.sendMessage(chatId, "❌ Vui lòng nhập key hợp lệ bằng lệnh /key.");
         return;
     }
-        
+
     if (activeBots[userId]) {
         bot.sendMessage(chatId, "⚠️ Bot đã được khởi động rồi.");
         return;
@@ -202,7 +227,7 @@ bot.onText(/\/batbot/, (msg) => {
 
     const intervalId = setInterval(() => fetchAndSendUpdate(chatId, userId), 15000); // Tự động cập nhật mỗi 15 giây
     activeBots[userId] = { intervalId: intervalId, lastPhien: null };
-    
+
     bot.sendMessage(chatId, "✅ Bot đã được khởi động tự động. Dữ liệu sẽ được cập nhật liên tục.");
     fetchAndSendUpdate(chatId, userId);
 });
@@ -211,7 +236,7 @@ bot.onText(/\/batbot/, (msg) => {
 bot.onText(/\/dungbot/, (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
-    
+
     if (activeBots[userId]) {
         clearInterval(activeBots[userId].intervalId);
         delete activeBots[userId];
